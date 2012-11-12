@@ -1,0 +1,63 @@
+\documentclass[a4paper,11pt]{article}
+ \usepackage[utf8]{inputenc}
+ \usepackage[T1]{fontenc}
+ \usepackage[normalem]{ulem}
+ \usepackage[french]{babel}
+ \usepackage{verbatim}
+ \usepackage{graphicx}
+ \usepackage{layout}
+
+\title{S\'ecurit\'e des r\'eseaux informatique TP : Utilisation de Nmap. }
+\author{Gil DE GROVE}
+\date{12 novembre 2012}
+\begin{document}
+\maketitle
+\section{Utilisation de Nmap}
+
+Lors du d\'ebut du TP, nous avons du installer NMap. 
+Nmap comme beacoup de commande utilis\'e dans un TTY linux, peut est facilement chang\'ee et adapt\'e \'a ses besoins gr\^{a}ce \'a l'utilisation des options.
+Comme premi\`{e}re prise en main, j'ai pu utilis\'e la commande :
+\paragraph{ \textbf{nmap -sP 10.4.35.*}}
+~~\\
+
+Cette commande permet de lister les hotes disponnible sur le r\'eseau et en ligne (ping scan). 
+
+Ceci n'est qu'une commande utlis\'e pour une prise en main. Il sera expliqu\'e plus longuement lors de la suite de ce document.
+\section{Analyse du fonctionnement de Nmap}
+Pour utiliser une option plus sp\'ecifique lors de l'utilisation de Nmap, il suffit de la connaitre et de la mettre derri\`{e}re un "-"
+
+\begin{itemize}
+\item \textbf{\textit{-sS (Scan TCP SYN)}}
+~~\\
+Le scan SYN est celui par d\'efaut et le plus populaire pour de bonnes raisons. Il peut \^{e}tre ex\'ecut\'e rapidement et scanner des milliers de ports par seconde sur un r\'eseau rapide lorsqu'il n'est pas entrav\'e par des pare-feux. Le scan SYN est relativement discret et furtif, vu qu'il ne termine jamais les connexions TCP. Il marche \'egalement contre toute pile respectant TCP, au lieu de d\'ependre des particularit\'es environnementales sp\'ecifiques comme les scans Fin/Null/Xmas, Maimon ou Idle le sont. Il permet de plus une diff\'erentiation fiable entre les \'etats ouvert, ferm\'e et filtr\'e. option permet 
+\newpage
+\item \textbf{\textit{-sT(Scan TCP connect())}}
+~~\\
+Le scan TCP connect() est le type de scan par défaut quand le SYN n'est pas utilisable. Tel est le cas lorsque l'utilisateur n'a pas les privil\`{e}ges pour les paquets bruts (raw packets) ou lors d'un scan de réseaux IPv6. Plutôt que d'\'ecrire des paquets bruts comme le font la plupart des autres types de scan, Nmap demande au système d'exploitation qui l'exécute d'établir une connexion au port de la machine cible grâce à l'appel système connect(). C'est le m\^{e}me appel système haut-niveau qui est appel\'e par les navigateurs Web, les clients P2P et la plupart des applications r\'eseaux qui veulent établir une connexion. Cet appel fait partie de l'interface d'application connue sous le nom de « Berkeley Sockets API ». Au lieu de lire les r\'eponses brutes sur le support physique, Nmap utilise cette application API pour obtenir l'état de chaque tentative de connexion.
+\item \textbf{\textit{-sU(Scan UDP)}}
+~~\\
+Même si les services les plus connus d'Internet son basés sur le protocole TCP, les services UDP sont aussi largement utilisés. DNS, SNMP ou DHCP (ports 53, 161/162 et 67/68) sont les trois exemples les plus courants. Comme le scan UDP est généralement plus lent et plus difficile que TCP, certains auditeurs de sécurité les ignorent. C'est une erreur, car les services UDP exploitables sont courants et les attaquants eux ne les ignoreront pas. Par chance, Nmap peut aider à répertorier les ports UDP.
+
+Le scan UDP est activé avec l'option-sU. Il peut être combiné avec un scan TCP, comme le scan SYN (  -sS), pour vérifier les deux protocoles lors de la même exécution de Nmap.
+\item \textbf{\textit{-sN; -sF; -sX (Scans TCP Null, FIN et Xmas)}}
+~~\\
+Ces trois types de scans (d'autres sont possibles en utilisant l'option --scanflags décrite dans la section suivante) exploitent une subtile faille de la RFC TCP pour différencier les ports entre ouverts et fermés. La page 65 indique que “si le port [de destination] est dans l'état fermé... un segment ne contenant pas le drapeau RST provoque l'émission d'un paquet RST comme réponse.”. La page suivante indique que pour les paquets envoyés à des ports sans aucun des drapeaux SYN, RST ou ACK activés: “il est peut vraisemblable que cela arrive, mais si cela est le cas, il faut rejeter le segment.”
+
+Pour les systèmes respectant ce texte de la RFC, chaque paquet ne contenant ni SYN, ni RST, ni ACK se voit renvoyé un RST si le port est fermé et aucune réponse si le port est ouvert. Tant qu'aucun de ces drapeaux n'est utilisé, toute combinaison des trois autres (FIN, PSH et URG) son valides. Nmap exploite cela avec les trois types de scans:
+
+\begin{itemize}
+\item Scan Null (-sN)
+N'active aucun des bits (les drapeaux de l'en-tête TCP vaut 0).
+\item Scan FIN (-sF)
+N'active que le bit FIN.
+\item Scan Xmas (-sX)
+Active les drapeaux FIN, PSH et URG, illuminant le paquet comme un arbre de Noël .
+\end{itemize}
+Ces trois types de scan ont exactement le même comportement, sauf pour les drapeaux TCP utilisés dans des paquets de tests (probes packets). Si un RST est reçu, le port est considéré comme étant fermé, tandis qu'une absence de réponse signifiera qu'il est dans l'état ouvert|filtré. Le port est marqué comme   filtré si un message d'erreur ICMP « unreachable (type 3, code 1, 2, 3, 9, 10 ou 13) » est reçu.
+\item \textbf{\textit{-sO(Scan du protocole IP)}}
+~~\\
+Le scan du protocole IP permet de déterminer quels protocoles IP (TCP, ICMP, IGMP, etc.) sont supportés par les cibles. Ce n'est donc pas techniquement un scan de ports, car Nmap essaie les différents numéros de protocoles IP à la place des numéros de ports TCP ou UDP. Ce scan permet néanmoins d'utiliser l'option -p pour sélectionner les numéros de protocoles à scanner -- le rapport de Nmap étant toujours dans le style habituel des tables de ports -- et utilise le même moteur de scan utilisé pour le scan de ports. Ainsi, cette technique est suffisamment proche du scan de port pour être présenté ici.\\
+\footcite{http://nmap.org/man/fr/man-port-scanning-techniques.html}
+\end{itemize}
+ 
+\end{document}
